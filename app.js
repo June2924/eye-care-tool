@@ -1,6 +1,7 @@
 const todayKey = () => new Date().toISOString().slice(0, 10);
 const storeKey = `eye-rest-${todayKey()}`;
 const runtimeKey = "eye-rest-running-timer";
+const notificationPromptedKey = "eye-rest-notification-prompted";
 const defaultState = {
   sessions: 0,
   checks: {},
@@ -169,6 +170,30 @@ async function prepareReminderSound() {
   if (context?.state === "suspended") await context.resume();
 }
 
+async function prepareWebReminder() {
+  if (state.reminders.sound) {
+    try {
+      await prepareReminderSound();
+    } catch {
+      reminderStatus.textContent = "浏览器暂时无法启用提示音，请检查网页声音权限。";
+    }
+  }
+
+  if (!("Notification" in window) || localStorage.getItem(notificationPromptedKey)) return;
+  localStorage.setItem(notificationPromptedKey, "1");
+  if (Notification.permission !== "default") return;
+
+  const permission = await Notification.requestPermission();
+  if (permission === "granted") {
+    state.reminders.notification = true;
+    save();
+    updateStats();
+    reminderStatus.textContent = "提示音和系统通知已就绪；切换到其他页面也能收到提醒。";
+  } else {
+    reminderStatus.textContent = "系统通知未开启，倒计时结束时仍会播放提示音并更新页面标题。";
+  }
+}
+
 async function playReminderSound(delay = 0) {
   const context = getReminderAudioContext();
   if (!context) return;
@@ -198,13 +223,18 @@ function sendReminder() {
     navigator.vibrate([260, 120, 260]);
   }
   if (state.reminders.notification && "Notification" in window && Notification.permission === "granted") {
-    navigator.serviceWorker.ready.then((registration) => {
-      registration.showNotification("该休息眼睛了", {
-        body: "看向 6 米外，眨眨眼，保持 20 秒。",
-        icon: "assets/icon-192.png",
-        badge: "assets/icon-192.png"
-      });
-    });
+    const options = {
+      body: "看向 6 米外，眨眨眼，保持 20 秒。",
+      icon: "assets/icon-192.png",
+      badge: "assets/icon-192.png"
+    };
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.ready
+        .then((registration) => registration.showNotification("该休息眼睛了", options))
+        .catch(() => new Notification("该休息眼睛了", options));
+    } else {
+      new Notification("该休息眼睛了", options);
+    }
   }
 }
 
@@ -376,7 +406,7 @@ async function startTimer() {
     stopTimer();
     return;
   }
-  if (state.reminders.sound) prepareReminderSound();
+  await prepareWebReminder();
   const plannedSeconds = remainingSeconds;
   if (state.native.enabled) {
     startPause.disabled = true;
@@ -384,9 +414,10 @@ async function startTimer() {
     const scheduled = await scheduleNativeRest(plannedSeconds);
     startPause.disabled = false;
     if (!scheduled) {
-      startPause.textContent = "开始";
-      window.alert("电脑强提醒没有接管计时。本次不会自动锁屏/霸屏。请确认是双击 Start-EyeRest-Web.bat 打开的页面，并且网页里显示本机桥接已连接。");
-      return;
+      nativeTimerScheduled = false;
+      nativeScheduleDeadline = 0;
+      reminderStatus.textContent = "没有连上电脑强提醒，本次已自动改用网页提示音、系统通知和页面提醒。";
+      window.alert("没有连上电脑强提醒，本次将继续使用普通网页提醒。倒计时结束时会播放提示音；如已授权系统通知，切换到其他页面后也会收到通知。");
     }
   }
   isRunning = true;
@@ -563,9 +594,15 @@ breakPanel.addEventListener("cancel", (event) => {
 });
 testReminder.addEventListener("click", async () => {
   if (state.native.enabled) {
-    await triggerBreak(true);
+    const handledByNative = await invokeNativeRest(true);
+    if (!handledByNative) {
+      await prepareWebReminder();
+      sendReminder();
+      startBreak();
+    }
     return;
   }
+  await prepareWebReminder();
   sendReminder();
   startBreak();
 });
