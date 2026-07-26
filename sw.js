@@ -1,11 +1,11 @@
-const CACHE_NAME = "eye-rest-v17";
+const CACHE_NAME = "eye-rest-v18";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./styles.css?v=16",
   "./app.js",
-  "./app.js?v=17",
+  "./app.js?v=18",
   "./manifest.webmanifest",
   "./assets/icon.svg",
   "./assets/icon-192.png",

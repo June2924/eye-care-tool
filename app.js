@@ -194,30 +194,33 @@ async function prepareWebReminder() {
   }
 }
 
-async function playReminderSound(delay = 0) {
+async function playReminderSound(delay = 0, frequency = 880) {
   const context = getReminderAudioContext();
   if (!context) return;
   if (context.state === "suspended") await context.resume();
   const oscillator = context.createOscillator();
   const gain = context.createGain();
   const now = context.currentTime + delay;
-  oscillator.type = "sine";
-  oscillator.frequency.setValueAtTime(740, now);
-  oscillator.frequency.setValueAtTime(520, now + 0.16);
+  const duration = 0.52;
+  oscillator.type = "triangle";
+  oscillator.frequency.setValueAtTime(frequency, now);
+  oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.82, now + duration);
   gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
+  gain.gain.exponentialRampToValueAtTime(0.34, now + 0.025);
+  gain.gain.setValueAtTime(0.34, now + 0.34);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
   oscillator.connect(gain);
   gain.connect(context.destination);
   oscillator.start(now);
-  oscillator.stop(now + 0.42);
+  oscillator.stop(now + duration + 0.02);
 }
 
 function sendReminder() {
   if (state.reminders.sound) {
-    playReminderSound(0);
-    playReminderSound(0.42);
-    playReminderSound(0.84);
+    playReminderSound(0, 920);
+    playReminderSound(0.62, 680);
+    playReminderSound(1.24, 920);
+    playReminderSound(1.86, 1080);
   }
   if (state.reminders.vibration && "vibrate" in navigator) {
     navigator.vibrate([260, 120, 260]);
@@ -395,9 +398,10 @@ function startReminderLoop() {
       reminderLoopId = null;
       return;
     }
-    playReminderSound(0);
-    playReminderSound(0.42);
-  }, 5000);
+    playReminderSound(0, 920);
+    playReminderSound(0.62, 680);
+    playReminderSound(1.24, 1080);
+  }, 4000);
 }
 
 async function startTimer() {
