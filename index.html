@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0f766e">
+    <meta name="description" content="一款日常护眼小工具，包含用眼计时、电脑强提醒、休息引导、日常清单、饮食打卡和异常提醒。">
+    <title>眼息</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="stylesheet" href="styles.css?v=16">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">日常护眼小工具</p>
+          <h1>眼息</h1>
+          <p class="subtitle">把休息、补光、饮食和检查提醒，变成每天顺手完成的小动作。</p>
+        </div>
+        <button class="icon-button" id="installButton" type="button" aria-label="安装到手机桌面" hidden>
+          <span>+</span>
+        </button>
+      </section>
+
+      <section class="timer-panel" aria-labelledby="timerTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">专注用眼</p>
+            <h2 id="timerTitle">日常 40 分钟</h2>
+          </div>
+          <div class="mode-switch" role="group" aria-label="用眼模式">
+            <button class="mode active" type="button" data-minutes="40" data-title="日常 40 分钟" data-hint="建议连续近距离用眼不超过 40-50 分钟。40 分钟适合觉得 20 分钟太频繁、但仍想规律休息的人。">
+              <span>日常</span>
+              <strong>40</strong>
+            </button>
+            <button class="mode" type="button" data-minutes="50" data-title="轻松 50 分钟" data-hint="50 分钟接近报告建议的连续近距离用眼上限。适合低强度用眼，不建议眼干、眼酸时选择。">
+              <span>轻松</span>
+              <strong>50</strong>
+            </button>
+            <button class="mode" type="button" data-minutes="20" data-title="护眼 20 分钟" data-hint="标准 20-20-20 模式，适合长时间看手机、电脑，或眼睛已经有干涩疲劳感时优先选择。">
+              <span>护眼</span>
+              <strong>20</strong>
+            </button>
+          </div>
+        </div>
+        <div class="timer-face">
+          <div class="ring" id="progressRing">
+            <span id="timeLeft">40:00</span>
+          </div>
+        </div>
+        <div class="timer-actions">
+          <button class="primary" id="startPause" type="button">开始</button>
+          <button class="secondary" id="resetTimer" type="button">重置</button>
+        </div>
+        <p class="hint" id="timerHint">建议连续近距离用眼不超过 40-50 分钟。40 分钟适合觉得 20 分钟太频繁、但仍想规律休息的人。</p>
+        <p class="science-note">所有模式到点后都进行 20 秒远眺——看向约 6 米外，休息 20 秒。</p>
+      </section>
+
+      <section class="reminder-panel" aria-labelledby="reminderTitle">
+        <div class="card-title">
+          <span class="dot blue"></span>
+          <h2 id="reminderTitle">提醒方式</h2>
+        </div>
+        <div class="toggle-row">
+          <span>提示音</span>
+          <button class="toggle active" type="button" data-reminder="sound" aria-pressed="true">开</button>
+        </div>
+        <div class="toggle-row">
+          <span>震动</span>
+          <button class="toggle" type="button" data-reminder="vibration" aria-pressed="false">关</button>
+        </div>
+        <div class="toggle-row">
+          <span>系统通知</span>
+          <button class="toggle" type="button" data-reminder="notification" aria-pressed="false">关</button>
+        </div>
+        <div class="desktop-bridge" aria-labelledby="desktopBridgeTitle">
+          <div>
+            <h3 id="desktopBridgeTitle">电脑强提醒</h3>
+            <p id="nativeStatus">未连接本机桥接服务，到点时使用网页内提醒。</p>
+          </div>
+          <div class="native-actions" role="group" aria-label="电脑强提醒方式">
+            <button class="native-mode active" type="button" data-native-action="overlay">全屏遮罩</button>
+            <button class="native-mode" type="button" data-native-action="screensaver">屏保</button>
+            <button class="native-mode danger" type="button" data-native-action="lock">锁屏</button>
+          </div>
+          <div class="toggle-row compact">
+            <span>交给电脑强提醒计时</span>
+            <button class="toggle" type="button" id="nativeToggle" aria-pressed="false">关</button>
+          </div>
+        </div>
+        <button class="secondary full" id="testReminder" type="button">测试提醒</button>
+        <p class="small" id="reminderStatus">默认会弹出全屏提示并播放提示音；切到别的 App 也想收到提醒，请开启系统通知。</p>
+      </section>
+
+      <dialog class="break-panel" id="breakPanel" aria-labelledby="breakTitle">
+        <p class="eyebrow">远眺休息</p>
+        <h2 id="breakTitle">看向 6 米外</h2>
+        <p>放下手机，眨眨眼，保持 20 秒。屏幕会自动倒计时。</p>
+        <strong id="breakLeft">20</strong>
+        <button class="secondary" id="skipBreak" type="button">我休息好了</button>
+      </dialog>
+
+      <section class="grid">
+        <article class="card">
+          <div class="card-title">
+            <span class="dot teal"></span>
+            <h2>今日护眼清单</h2>
+          </div>
+          <label><input type="checkbox" data-check="blink"> 连续用眼时主动眨眼</label>
+          <label><input type="checkbox" data-check="distance"> 手机离眼睛约一臂远</label>
+          <label><input type="checkbox" data-check="light"> 没有关灯刷手机</label>
+          <label><input type="checkbox" data-check="walk"> 至少一次户外活动</label>
+        </article>
+
+        <article class="card">
+          <div class="card-title">
+            <span class="dot amber"></span>
+            <h2>护眼饮食</h2>
+          </div>
+          <button class="food" type="button" data-food="greens">深绿色蔬菜</button>
+          <button class="food" type="button" data-food="egg">蛋黄 / 玉米</button>
+          <button class="food" type="button" data-food="fish">深海鱼 / 坚果</button>
+          <p class="small">重点补充叶黄素、玉米黄质和 Omega-3，优先靠饮食。</p>
+        </article>
+
+        <article class="card">
+          <div class="card-title">
+            <span class="dot rose"></span>
+            <h2>需要及时就医</h2>
+          </div>
+          <ul class="warning-list">
+            <li>视力突然下降</li>
+            <li>眼前黑影或闪光感</li>
+            <li>看东西变形</li>
+            <li>眼痛、头痛、恶心</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <div class="card-title">
+            <span class="dot blue"></span>
+            <h2>检查提醒</h2>
+          </div>
+          <p class="small">成年人可定期做眼科检查；高血压、糖尿病、高度近视、长期高强度用眼或有家族史的人群更要重视。</p>
+          <button class="secondary full" id="examDone" type="button">记录本次已检查</button>
+          <p class="small" id="examStatus"></p>
+        </article>
+      </section>
+    </main>
+
+    <nav class="bottom-bar" aria-label="护眼统计">
+      <div>
+        <strong id="sessions">0</strong>
+        <span>今日休息</span>
+      </div>
+      <div>
+        <strong id="score">0%</strong>
+        <span>清单完成</span>
+      </div>
+      <div>
+        <strong id="streak">0</strong>
+        <span>连续天数</span>
+      </div>
+    </nav>
+
+    <script src="app.js?v=16"></script>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "name": "眼息 - 护眼小工具",
+  "short_name": "眼息",
+  "description": "日常护眼小工具：用眼计时、电脑强提醒、20 秒远眺、清单打卡、饮食提醒和眼科检查提醒。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f3ec",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
