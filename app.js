@@ -55,9 +55,24 @@ const testReminder = document.querySelector("#testReminder");
 const nativeStatus = document.querySelector("#nativeStatus");
 const nativeToggle = document.querySelector("#nativeToggle");
 const nativeActionButtons = document.querySelectorAll("[data-native-action]");
+const desktopBridge = document.querySelector("#desktopBridge");
+const nativeInstallPrompt = document.querySelector("#nativeInstallPrompt");
+const retryNativeBridge = document.querySelector("#retryNativeBridge");
+const nativeInstallDialog = document.querySelector("#nativeInstallDialog");
+const nativeInstallDialogText = document.querySelector("#nativeInstallDialogText");
+const closeNativeInstall = document.querySelector("#closeNativeInstall");
+const continueWebReminder = document.querySelector("#continueWebReminder");
+const windowsDownloadLinks = document.querySelectorAll("[data-windows-download]");
 let nativeBridgeBase = "";
 let nativeTimerScheduled = false;
 let nativeScheduleDeadline = 0;
+
+const githubPagesOwner = location.hostname.endsWith(".github.io")
+  ? location.hostname.slice(0, -".github.io".length)
+  : "electric-muse";
+windowsDownloadLinks.forEach((link) => {
+  link.href = `https://github.com/${githubPagesOwner}/eye-care-tool/archive/refs/heads/main.zip`;
+});
 
 function save() {
   localStorage.setItem(storeKey, JSON.stringify(state));
@@ -274,15 +289,29 @@ function renderNativeControls(connected = Boolean(nativeBridgeBase)) {
   nativeToggle.classList.toggle("active", Boolean(state.native.enabled));
   nativeToggle.textContent = state.native.enabled ? "开" : "关";
   nativeToggle.setAttribute("aria-pressed", String(Boolean(state.native.enabled)));
-  if (!state.native.enabled) {
-    nativeStatus.textContent = connected
-      ? "本机桥接已就绪；开启后到点可调用电脑强提醒。"
-      : "未连接本机桥接服务，到点时使用网页内提醒。";
-    return;
-  }
+  desktopBridge.classList.toggle("connected", connected);
+  nativeInstallPrompt.hidden = connected;
   nativeStatus.textContent = connected
-    ? `已连接本机桥接；开始计时后，本机程序会准时执行${state.native.action === "lock" ? "锁屏" : state.native.action === "screensaver" ? "屏保" : "全屏遮罩"}。`
-    : "已开启电脑强提醒，但还没检测到本机桥接服务。";
+    ? "Windows 强提醒组件已连接"
+    : "未检测到 Windows 强提醒组件";
+}
+
+function openNativeInstallDialog(action = "") {
+  const actionLabel = action === "lock" ? "自动锁屏" : action === "screensaver" ? "屏保" : "电脑强提醒";
+  nativeInstallDialogText.innerHTML = `使用${actionLabel}需要先启动 Windows 强提醒组件。下载后解压，并双击 <code>Start-EyeRest-Web.bat</code>。你也可以继续使用普通网页提示音和系统通知。`;
+  if (typeof nativeInstallDialog.showModal === "function" && !nativeInstallDialog.open) {
+    nativeInstallDialog.showModal();
+  } else {
+    nativeInstallDialog.setAttribute("open", "");
+  }
+}
+
+function closeNativeInstallDialog() {
+  if (typeof nativeInstallDialog.close === "function" && nativeInstallDialog.open) {
+    nativeInstallDialog.close();
+  } else {
+    nativeInstallDialog.removeAttribute("open");
+  }
 }
 
 async function detectNativeBridge() {
@@ -561,6 +590,10 @@ document.querySelectorAll("[data-reminder]").forEach((item) => {
 
 nativeActionButtons.forEach((button) => {
   button.addEventListener("click", () => {
+    if (!nativeBridgeBase && ["screensaver", "lock"].includes(button.dataset.nativeAction)) {
+      openNativeInstallDialog(button.dataset.nativeAction);
+      return;
+    }
     state.native.action = button.dataset.nativeAction;
     save();
     renderNativeControls();
@@ -571,17 +604,50 @@ nativeActionButtons.forEach((button) => {
 });
 
 nativeToggle.addEventListener("click", async () => {
-  state.native.enabled = !state.native.enabled;
-  save();
-  renderNativeControls();
-  if (state.native.enabled) {
-    await detectNativeBridge();
+  if (!state.native.enabled) {
+    const connected = nativeBridgeBase ? true : await detectNativeBridge();
+    if (!connected) {
+      state.native.enabled = false;
+      save();
+      renderNativeControls(false);
+      openNativeInstallDialog(state.native.action);
+      return;
+    }
+    state.native.enabled = true;
+    save();
+    renderNativeControls(true);
     if (isRunning) {
       scheduleNativeRest(remainingSeconds);
     }
   } else {
+    state.native.enabled = false;
+    save();
+    renderNativeControls();
     cancelNativeSchedule();
   }
+});
+
+retryNativeBridge.addEventListener("click", async () => {
+  retryNativeBridge.disabled = true;
+  retryNativeBridge.textContent = "正在检测...";
+  nativeStatus.textContent = "正在检测 Windows 强提醒组件...";
+  const connected = await detectNativeBridge();
+  retryNativeBridge.disabled = false;
+  retryNativeBridge.textContent = connected ? "连接成功" : "已启动，重新检测";
+  if (connected) closeNativeInstallDialog();
+});
+
+closeNativeInstall.addEventListener("click", closeNativeInstallDialog);
+continueWebReminder.addEventListener("click", () => {
+  state.native.enabled = false;
+  save();
+  renderNativeControls(false);
+  reminderStatus.textContent = "将继续使用网页提示音、系统通知和页面提醒。";
+  closeNativeInstallDialog();
+});
+nativeInstallDialog.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeNativeInstallDialog();
 });
 
 examDone.addEventListener("click", () => {

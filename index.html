@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="assets/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=16">
+    <link rel="stylesheet" href="styles.css?v=19">
   </head>
   <body>
     <main class="app-shell">
@@ -75,10 +75,26 @@
           <span>系统通知</span>
           <button class="toggle" type="button" data-reminder="notification" aria-pressed="false">关</button>
         </div>
-        <div class="desktop-bridge" aria-labelledby="desktopBridgeTitle">
-          <div>
-            <h3 id="desktopBridgeTitle">电脑强提醒</h3>
-            <p id="nativeStatus">未连接本机桥接服务，到点时使用网页内提醒。</p>
+        <div class="desktop-bridge" id="desktopBridge" aria-labelledby="desktopBridgeTitle">
+          <div class="native-heading">
+            <div>
+              <h3 id="desktopBridgeTitle">电脑强提醒</h3>
+              <p id="nativeStatus">正在检测 Windows 强提醒组件...</p>
+            </div>
+            <span class="windows-badge">仅支持 Windows</span>
+          </div>
+          <div class="native-install-prompt" id="nativeInstallPrompt">
+            <strong>未检测到 Windows 强提醒组件</strong>
+            <p>如需使用全屏遮罩、屏保或自动锁屏，请下载 Windows 版。解压后双击 <code>Start-EyeRest-Web.bat</code> 即可使用。</p>
+            <div class="native-features" aria-label="Windows 版特点">
+              <span>无需安装</span>
+              <span>全屏遮罩</span>
+              <span>屏保与锁屏</span>
+            </div>
+            <div class="native-setup-actions">
+              <a class="primary native-download" data-windows-download href="https://github.com/electric-muse/eye-care-tool/archive/refs/heads/main.zip">下载 Windows 版</a>
+              <button class="secondary" id="retryNativeBridge" type="button">已启动，重新检测</button>
+            </div>
           </div>
           <div class="native-actions" role="group" aria-label="电脑强提醒方式">
             <button class="native-mode active" type="button" data-native-action="overlay">全屏遮罩</button>
@@ -100,6 +116,17 @@
         <p>放下手机，眨眨眼，保持 20 秒。屏幕会自动倒计时。</p>
         <strong id="breakLeft">20</strong>
         <button class="secondary" id="skipBreak" type="button">我休息好了</button>
+      </dialog>
+
+      <dialog class="native-install-dialog" id="nativeInstallDialog" aria-labelledby="nativeInstallTitle">
+        <button class="dialog-close" id="closeNativeInstall" type="button" aria-label="关闭">×</button>
+        <p class="eyebrow">Windows 强提醒</p>
+        <h2 id="nativeInstallTitle">此功能需要 Windows 强提醒组件</h2>
+        <p id="nativeInstallDialogText">下载后解压，并双击 <code>Start-EyeRest-Web.bat</code>。你也可以继续使用普通网页提示音和系统通知。</p>
+        <div class="native-dialog-actions">
+          <a class="primary native-download" data-windows-download href="https://github.com/electric-muse/eye-care-tool/archive/refs/heads/main.zip">下载 Windows 版</a>
+          <button class="secondary" id="continueWebReminder" type="button">继续使用网页提醒</button>
+        </div>
       </dialog>
 
       <section class="grid">
@@ -165,6 +192,6 @@
       </div>
     </nav>
 
-    <script src="app.js?v=18"></script>
+    <script src="app.js?v=19"></script>
   </body>
 </html>
